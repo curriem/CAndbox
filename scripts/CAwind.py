@@ -16,6 +16,12 @@ key:
 
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
+
+parser = argparse.ArgumentParser(description='CA wind')
+parser.add_argument('save_file',
+                    help='name of file you want to save output as, should be.npy')
+args = parser.parse_args()
 
 
 def plot_frame(frame, vmin=-1, vmax=1, title=None):
@@ -28,12 +34,12 @@ def plot_frame(frame, vmin=-1, vmax=1, title=None):
     plt.close()
 
 
-def probMatrix(numLayers, masterProb, windMag, windDir):
-    matDim = numLayers*2 + 1  # the dimensions of the matrix of neighbors
+def probability_matrix(neighbor_radius, masterProb, windMag, windDir):
+    matDim = neighbor_radius*2 + 1  # the dimensions of the matrix of neighbors
 
     # Compute the distance scales
     mat = np.empty((matDim, matDim))
-    center = [numLayers, numLayers]
+    center = [neighbor_radius, neighbor_radius]
     for i in range(matDim):
         for j in range(matDim):
             mat[i, j] = np.linalg.norm(np.array([i, j])
@@ -46,7 +52,7 @@ def probMatrix(numLayers, masterProb, windMag, windDir):
     windMat = np.empty_like(mat)
     for i in range(matDim):
         for j in range(matDim):
-            if i == j == numLayers:
+            if i == j == neighbor_radius:
                 windMat[i, j] = 0
                 continue
             pixVector = np.array([-(i - center[0]), (j - center[1])])
@@ -64,59 +70,53 @@ def probMatrix(numLayers, masterProb, windMag, windDir):
     return probMat
 
 
-def randProbMatrix(numLayers):
-    matDim = 2*numLayers + 1
+def rand_probs(neighbor_radius):
+    matDim = 2*neighbor_radius + 1
     randMatrix = np.random.rand(matDim, matDim)
     return randMatrix
 
 
-def burnTimeGrid(N, master, homogeneous=False):
-    grid = np.ones((N, N))
-    grid[N/3:2*N/3, :] = 2
-    grid[2*N/3:, :] = 3
+def burnTimeGrid(len_side, master, homogeneous=False):
+    grid = np.ones((len_side, len_side))
+    grid[len_side/3:2*len_side/3, :] = 2
+    grid[2*len_side/3:, :] = 3
     if homogeneous:
-        grid = master*np.ones((N, N))
+        grid = master*np.ones((len_side, len_side))
 
     return grid
 
 
-def initialFire(N, fireType):
+def initialFire(len_side, fireType):
 
-    fireGrid = np.zeros((N, N))
+    fireGrid = np.zeros((len_side, len_side))
 
     if fireType == 'line':
-        fireGrid[9*N/10, N/3:2*N/3] = 1
-        # fireGrid[N/2+1,2*N/5:3*N/5]=1
+        fireGrid[9*len_side/10, len_side/3:2*len_side/3] = 1
+        # fireGrid[len_side/2+1,2*len_side/5:3*len_side/5]=1
     elif fireType == 'point':
-        fireGrid[N/2, N/2-1:N/2+2] = 1
-        fireGrid[N/2-1, N/2-1:N/2+2] = 1
-        fireGrid[N/2+1, N/2-1:N/2+2] = 1
+        fireGrid[len_side/2, len_side/2-1:len_side/2+2] = 1
+        fireGrid[len_side/2-1, len_side/2-1:len_side/2+2] = 1
+        fireGrid[len_side/2+1, len_side/2-1:len_side/2+2] = 1
     elif fireType == 'parabola':
-        x = np.arange(N/3, 2*N/3)
-        y = 0.01*(x-N/2+1)**2 + N/2
+        x = np.arange(len_side/3, 2*len_side/3)
+        y = 0.01*(x-len_side/2+1)**2 + len_side/2
         fireGrid[np.rint(y).astype('int'),
                  np.rint(x).astype('int')] = 1
     else:
         print 'Specified fire type not recognized, doing point.'
-        fireGrid[N/2, N/2] = 1
+        fireGrid[len_side/2, len_side/2] = 1
 
     return fireGrid
 
 
-def main(bigMati, leng, tstep):
+def make_timeseries(frames, len_side, num_t):
 
-    plotting = False   # plot at the end?
-    save = False       # save the plots?
-    N = leng   # length of a side
     eps = 10**(-3)
     fireType = 'line'
-    numLayers = 1
+    neighbor_radius = 1
     masterBurnTime = 3
-    numTimesteps = tstep
 
-    savePath = '/home/dr17c/FireDynamics/data/'
-
-    fireGrid = initialFire(N, 'line')
+    fireGrid = initialFire(len_side, 'line')
 
     fireTimeseries = [np.copy(fireGrid)]    # initiate a timeseries for later
 
@@ -124,41 +124,45 @@ def main(bigMati, leng, tstep):
     alpha = 1.             # Sink strength
     beta = 5.               # Background Flow Strength
     gamma = 0.75               # Tanh Coefficient
-    uD = np.zeros((N, N))
-    vD = np.zeros((N, N))
+    uD = np.zeros((len_side, len_side))
+    vD = np.zeros((len_side, len_side))
 
-    # Uniform flow (Upwards)
-    def phi(x, y):
-        return (1.*y)
-
-    burnTimes = burnTimeGrid(N, masterBurnTime, homogeneous=True)
-    for t in range(numTimesteps):
+    burnTimes = burnTimeGrid(len_side, masterBurnTime, homogeneous=True)
+    for t in range(num_t):
         print 'working on timestep %i' % t
-        fireInds = np.array(np.where(fireGrid > 0))
-        for [i, j] in fireInds.T:
-            uD[i, j] = beta
-            vD[i, j] = 0.
+        fire_x, fire_y = np.array(np.where(fireGrid > 0))
 
+        uD[fire_x, fire_y] = beta
+        vD[fire_x, fire_y] = 0.
+
+        # what is this doing?
+        # looks like getting the distance from pix to pix
+        for n in range(len(fire_x)):
+            rx = fire_x - fire_x[n]
+            ry = fire_y - fire_y[n]
+            r2 = rx**2 + ry**2 # is this supposed to be normalized?
+            offset_term = (alpha/(2*np.pi))*rx/(r2+eps**2.)
+            uD[fire_x, fire_y] = uD[fire_x, fire_y] - offset_term
+            vD[fire_x, fire_y] = vD[fire_x, fire_y] - offset_term
+
+        # the thing below doesn't work yet need advanced slicing
+        # (not sure if that exists in python)
+        neighbors_new = \
+        fireGrid[fire_x-neighbor_radius:fire_x+neighbor_radius+1,
+                 fire_y-neighbor_radius:fire_y+neighbor_radius+1]
+        print neighbors_new
         for [x, y] in fireInds.T:
-            centerD = np.array([x, y])
-
-            for [i, j] in fireInds.T:
-                pntD = np.array([i, j])
-                rx = pntD[0] - centerD[0]
-                ry = pntD[1] - centerD[1]
-                r2 = rx**2 + ry**2
-                uD[i, j] = uD[i, j] - (alpha/(2*np.pi))*rx/(r2+eps**2.)
-                vD[i, j] = vD[i, j] - (alpha/(2*np.pi))*ry/(r2+eps**2.)
-
-        for [x, y] in fireInds.T:
-
-            neighbors = fireGrid[x-numLayers:x+numLayers+1,
-                                 y-numLayers:y+numLayers+1]
+        for n in range(len(fire_x)):
+            neighbors = fireGrid[x-neighbor_radius:x+neighbor_radius+1,
+                                 y-neighbor_radius:y+neighbor_radius+1]
+            print neighbors
+            assert False
+            # not sure what this is doing
             if np.array_equal(np.array(neighbors.shape),
-                              np.array([2.*numLayers+1,
-                                        2.*numLayers+1])) == False:
+                              np.array([2.*neighbor_radius+1,
+                                        2.*neighbor_radius+1])) == False:
                 continue
-            randProb = randProbMatrix(numLayers)
+            randProb = rand_probs(neighbor_radius)
 
             AlphaD = np.arctan2(vD[x, y],
                                 (uD[x, y]+eps))
@@ -167,7 +171,7 @@ def main(bigMati, leng, tstep):
 
             windMag *= masterProb
 
-            probThresh = probMatrix(numLayers, masterProb, windMag, AlphaD)
+            probThresh = probability_matrix(neighbor_radius, masterProb, windMag, AlphaD)
 
             probThresh *= (np.ones_like(probThresh)
                            - np.abs(neighbors))
@@ -176,52 +180,35 @@ def main(bigMati, leng, tstep):
 
             neighbors[newFireInds[0], newFireInds[1]] = 1
 
-            fireGrid[x-numLayers:x+numLayers+1,
-                     y-numLayers:y+numLayers+1] = neighbors
+            fireGrid[x-neighbor_radius:x+neighbor_radius+1,
+                     y-neighbor_radius:y+neighbor_radius+1] = neighbors
             fireGrid[x, y] += 1
 
         burntInds = np.array(np.where(fireGrid > burnTimes))
         fireGrid[burntInds[0], burntInds[1]] = -1
         plot_frame(fireGrid, vmin=-1, vmax=4, title=t+1)
         burningInds = np.array(np.where(fireGrid > 0))
-        bigMat[burningInds[0], burningInds[1], t] += 1
+        frames[burningInds[0], burningInds[1], t] += 1
         # have to do this because python is stupid sometimes
         temp = np.copy(fireGrid)
         fireTimeseries.append(temp)
 
     fireTimeseries = np.array(fireTimeseries)
 
-    if save:
-        np.save(savePath+'CA_type=%s_layers=%i_burnTime=%i_wind=%s.npy'
-                % (fireType, numLayers,
-                   masterBurnTime, str(windMag)), fireTimeseries)
-
-    if plotting:
-        for frame in fireTimeseries:
-            plt.figure()
-            plt.imshow(frame, interpolation='nearest',
-                       cmap='jet', vmin=-1, vmax=1)
-            plt.axis('off')
-            plt.colorbar()
+    np.save('../model_data/CA_type=%s_layers=%i_burnTime=%i_wind=%s.npy'
+            % (fireType, neighbor_radius,
+               masterBurnTime, str(windMag)), fireTimeseries)
 
     return fireGrid
 
-# main()
 
-#"""
-numreps = 1
-tstep = 70  # Number of time steps
-N = 100 # Grid Size
-bigMat = np.zeros([N,N,tstep])
-for i in range(numreps):
-    main(bigMat,N,tstep)
+if __name__ == '__main__':
 
-np.save('frames',bigMat)
-#"""
-for i in range(tstep):
-    frame = bigMat[:,:,i]
-    plt.figure(i)
-    plt.imshow(frame, interpolation='nearest', cmap='jet', vmin=2, vmax=3)
-    plt.axis('off')
-    plt.colorbar()
-    plt.title(['Timestep:', i+1])
+    num_reps = 1
+    t = 70  # Number of time steps
+    len_side = 100 # Grid Size
+    frames = np.zeros([len_side, len_side, t])
+    for i in range(num_reps):
+        make_timeseries(frames, len_side, t)
+
+    np.save(args.save_file, frames)
