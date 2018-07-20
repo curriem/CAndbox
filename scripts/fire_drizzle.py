@@ -10,7 +10,7 @@ from matplotlib import colors
 
 '''
 
-correction = False
+correction = True
 
 def init_grid(len_side):
     grid = np.ones((len_side, len_side))
@@ -38,10 +38,11 @@ def rate_of_spread_xy(R0, Ebar, alpha, theta, ti):
     return np.abs(ros_x), np.abs(ros_y)
 
 
-def rate_of_spread(R0, U_eq, alpha, theta, ti):
+def rate_of_spread(R0, U_eq, alpha, phi, ti):
 
     LW = 0.936*np.exp(50.5*U_eq) + 0.461*np.exp(-30.5*U_eq) - 0.397
     Ebar = np.sqrt(1 - 1/LW**2)
+    theta = phi - alpha
 
     if correction:
 
@@ -74,7 +75,7 @@ def rate_of_spread(R0, U_eq, alpha, theta, ti):
         assert theta_prime == theta, '%.03f =/= %.03f' % (theta_prime, theta)
 
     else:
-        ros = R0 * (1-Ebar) / (1-Ebar*np.cos(alpha-theta))
+        ros = R0 * (1-Ebar) / (1-Ebar*np.cos(theta))
 
     return ros
 
@@ -95,13 +96,10 @@ if __name__ == '__main__':
 
     timesteps = 70
     len_side = 120
-    alpha = np.pi
+    alpha = np.pi - np.pi/4
 
     y_start = 80
 
-    thetas = [0, np.pi/4, np.pi/2, 3*np.pi/4,
-              np.pi, 5*np.pi/4, 3*np.pi/2,
-              7*np.pi/4]
     bucket_grid = np.zeros((len_side, len_side))
     neighbor_angles = np.arange(0, 2*np.pi, np.pi/4)
     neighbor_locations = np.array([(+1, 0), (+1, +1), (0, +1), (-1, +1),
@@ -136,10 +134,10 @@ if __name__ == '__main__':
 
             else:
                 # OLD WAY
-                for neighbor_num, theta in enumerate(neighbor_angles):
+                for neighbor_num, phi in enumerate(neighbor_angles):
                     ros = rate_of_spread(R0_grid[I_inds_x[n], I_inds_y[n]],
                                          Ueq_grid[I_inds_x[n], I_inds_y[n]],
-                                         alpha, theta, ti)
+                                         alpha, phi, ti)
                     bucket_grid[I_inds_x[n]
                                 + neighbor_locations[neighbor_num, 0],
                                 I_inds_y[n]
