@@ -10,6 +10,8 @@ from matplotlib import colors
 
 '''
 
+correction = False
+
 def init_grid(len_side):
     grid = np.ones((len_side, len_side))
 
@@ -36,8 +38,43 @@ def rate_of_spread_xy(R0, Ebar, alpha, theta, ti):
     return np.abs(ros_x), np.abs(ros_y)
 
 
-def rate_of_spread(R0, Ebar, alpha, theta, ti):
-    ros = R0 * (1-Ebar) / (1-Ebar*np.cos(alpha-theta))
+def rate_of_spread(R0, U_eq, alpha, theta, ti):
+
+    LW = 0.936*np.exp(50.5*U_eq) + 0.461*np.exp(-30.5*U_eq) - 0.397
+    Ebar = np.sqrt(1 - 1/LW**2)
+
+    if correction:
+
+        # corrected rate of spread
+        k1 = 1
+        k2 = 2
+        k3 = 0
+        k4 = 0
+        k5 = 0
+
+        R0_prime = k1*R0
+        Ebar_prime = np.sqrt(1 - 1/LW**k2)
+        if (k3 == 0) and (k4 == 0):
+            theta_prime = theta
+        else:
+            if np.abs(theta) <= np.pi/2:
+                theta_prime = np.arctan(np.tan(theta) / LW**k3)
+            elif np.abs(theta) > np.pi/2:
+                theta_prime = np.arctan(np.tan(theta) / LW**k4)
+
+            else:
+                assert False, 'weird theta'
+        ros = (R0_prime * (1-Ebar_prime) / (1-Ebar_prime*np.cos(theta_prime))
+               - R0_prime*((1-Ebar_prime)/(1+Ebar_prime)
+                           - (1-Ebar)/(1+Ebar))
+               * (np.abs(theta_prime)/np.pi)**k5)
+
+        assert Ebar_prime == Ebar, '%.03f =/= %.03f' % (Ebar_prime, Ebar)
+        assert R0_prime == R0, '%.03f =/= %.03f' % (R0_prime, R0)
+        assert theta_prime == theta, '%.03f =/= %.03f' % (theta_prime, theta)
+
+    else:
+        ros = R0 * (1-Ebar) / (1-Ebar*np.cos(alpha-theta))
 
     return ros
 
@@ -53,7 +90,7 @@ if __name__ == '__main__':
     # ###### cmap #######
 
     # params
-    Ebar = 0.8
+    U_eq = 0.012
     R0 = 0.5
 
     timesteps = 70
@@ -75,7 +112,7 @@ if __name__ == '__main__':
                                    1, np.sqrt(2)])
     bucket_grid[y_start, len_side/2] = 1.
 
-    Ebar_grid = Ebar*np.ones((len_side, len_side))
+    Ueq_grid = U_eq*np.ones((len_side, len_side))
     R0_grid = R0*np.ones((len_side, len_side))
     # Ebar_grid = np.random.random((len_side, len_side))
     # R0_grid = np.random.random((len_side, len_side))
@@ -98,10 +135,10 @@ if __name__ == '__main__':
                 state_grid[I_inds_x[n], I_inds_y[n]] = 3
 
             else:
-                ''' OLD WAY
+                # OLD WAY
                 for neighbor_num, theta in enumerate(neighbor_angles):
                     ros = rate_of_spread(R0_grid[I_inds_x[n], I_inds_y[n]],
-                                         Ebar_grid[I_inds_x[n], I_inds_y[n]],
+                                         Ueq_grid[I_inds_x[n], I_inds_y[n]],
                                          alpha, theta, ti)
                     bucket_grid[I_inds_x[n]
                                 + neighbor_locations[neighbor_num, 0],
@@ -116,7 +153,7 @@ if __name__ == '__main__':
                 # NEW WAY, vectorized
                 neighbor_nums = np.arange(0, len(neighbor_angles))
                 ros = rate_of_spread(R0_grid[I_inds_x[n], I_inds_y[n]],
-                                     Ebar_grid[I_inds_x[n], I_inds_y[n]],
+                                     Ueq_grid[I_inds_x[n], I_inds_y[n]],
                                      alpha, neighbor_angles, ti)
                 bucket_grid[I_inds_x[n]
                             + neighbor_locations[neighbor_nums, 0],
@@ -126,6 +163,7 @@ if __name__ == '__main__':
                 new_I_inds_x, new_I_inds_y = np.where((bucket_grid >= 1.)
                                                       & (state_grid != 3))
                 state_grid[new_I_inds_x, new_I_inds_y] = 2
+                '''
 
         plt.figure()
         plt.imshow(state_grid, cmap=fire_cmap, norm=norm)
