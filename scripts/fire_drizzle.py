@@ -94,7 +94,7 @@ if __name__ == '__main__':
     U_eq = 0.012
     R0 = 0.5
 
-    timesteps = 70
+    timesteps = 90
     len_side = 120
     alpha = np.pi - np.pi/4
 
@@ -114,6 +114,9 @@ if __name__ == '__main__':
     R0_grid = R0*np.ones((len_side, len_side))
     # Ebar_grid = np.random.random((len_side, len_side))
     # R0_grid = np.random.random((len_side, len_side))
+    alpha_grid = alpha * np.ones((len_side, len_side))
+
+    alpha_grid[len_side/2:, :] = np.pi
 
     state_grid = np.ones_like(bucket_grid)
     state_grid[y_start, len_side/2] = 2
@@ -137,7 +140,8 @@ if __name__ == '__main__':
                 for neighbor_num, phi in enumerate(neighbor_angles):
                     ros = rate_of_spread(R0_grid[I_inds_x[n], I_inds_y[n]],
                                          Ueq_grid[I_inds_x[n], I_inds_y[n]],
-                                         alpha, phi, ti)
+                                         alpha_grid[I_inds_x[n], I_inds_y[n]],
+                                         phi, ti)
                     bucket_grid[I_inds_x[n]
                                 + neighbor_locations[neighbor_num, 0],
                                 I_inds_y[n]
