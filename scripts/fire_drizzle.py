@@ -12,11 +12,12 @@ from matplotlib import colors
 
 correction = True
 
+
 def init_grid(len_side):
     state_grid = np.ones((len_side, len_side))
     bucket_grid = np.zeros((len_side, len_side))
 
-    state_grid = np.load('polka.npy')
+    #state_grid = np.load('polka.npy')
 
     # start a point fire
     state_grid[160, 50] = 2
@@ -32,18 +33,25 @@ def init_grid(len_side):
     return bucket_grid, state_grid
 
 
-def init_elev_grid(len_side):
-    # gaussian mountain:
-    x, y = np.meshgrid(np.linspace(-100,100,200), np.linspace(-100,100,200))
-    d = np.sqrt(x*x+y*y)
-    sigma, mu = 30.0, 1
-    elev_grid = np.exp(-((d-mu)**2 / (2.0 * sigma**2)))
-    elev_grid *= 10
-    elev_grid = elev_grid.astype(int)
+def init_elev_grid(len_side, flat=False):
 
-
-    # flat
-    elev_grid = np.zeros((len_side, len_side))
+    if flat:
+        elev_grid = np.zeros((len_side, len_side))
+    else:
+        # gaussian mountain
+        x, y = np.meshgrid(np.linspace(-100, 100, 200),
+                           np.linspace(-100, 100, 200))
+        d = np.sqrt(x*x+y*y)
+        sigma, mu = 30.0, 1
+        elev_grid = np.exp(-((d-mu)**2 / (2.0 * sigma**2)))
+        elev_grid *= 100
+    '''
+    plt.figure()
+    plt.imshow(elev_grid)
+    plt.colorbar()
+    plt.show()
+    assert False
+    '''
     return elev_grid
 
 
@@ -69,7 +77,8 @@ def rate_of_spread_xy(R0, Ebar, alpha, theta, ti):
 
 def rate_of_spread(R0, U_eq, alpha, phi, ti):
 
-    LW = 0.936*np.exp(50.5*U_eq) + 0.461*np.exp(-30.5*U_eq) - 0.397
+    # from the Farsite paper: the original paper's units were wrong probably
+    LW = 0.936*np.exp(0.2566*U_eq) + 0.461*np.exp(-0.1548*U_eq) - 0.397
     Ebar = np.sqrt(1 - 1/LW**2)
     theta = phi - alpha
 
@@ -109,6 +118,15 @@ def rate_of_spread(R0, U_eq, alpha, phi, ti):
     return ros
 
 
+def phi_corrections(slope, beta=1, beta_op=1, B=1, C=0, U=1, E=1):
+    phi_s = 5.275 * beta**-0.3 * np.tan(slope)**2
+    phi_w = C*(3.281*U)**B * (beta/beta_op)**-E
+
+    return phi_s, phi_w
+
+
+
+
 def horizontal_component(elev_grid_neighbors):
 
     neighbor_angles = [[3*np.pi/4, np.pi/2, np.pi/4],
@@ -137,7 +155,28 @@ def horizontal_component(elev_grid_neighbors):
     return h_correction
 
 
+def calculate_slope_neighbors(elev_neighbors):
+
+    pix_of_interest_elev = elev_neighbors[1, 1]
+
+    delt_elev_neighbors = elev_neighbors - pix_of_interest_elev
+
+    distance_neighbors = [[np.sqrt(2), 1, np.sqrt(2)],
+                          [1, 0, 1],
+                          [np.sqrt(2), 1, np.sqrt(2)]]
+
+    slope_neighbors = delt_elev_neighbors / distance_neighbors
+
+    return slope_neighbors
+
+
+
 if __name__ == '__main__':
+
+
+
+    # need to add a slope parameter that scales R0 as a sigmoid 
+    # maybe arctan(slope)
 
     # ###### cmap #######
     fire_cmap = colors.ListedColormap(['blue', 'limegreen',
@@ -150,7 +189,6 @@ if __name__ == '__main__':
     # params
     U_eq = 0.012
     R0 = 0.5
-
     timesteps = 400
     len_side = 200
     alpha = np.pi - np.pi/4
@@ -175,7 +213,7 @@ if __name__ == '__main__':
 
     alpha_grid[len_side/2:, :] = np.pi
 
-    elev_grid = init_elev_grid(len_side)
+    elev_grid = init_elev_grid(len_side, flat=False)
 
     # state_grid = np.ones_like(bucket_grid)
     # state_grid[y_start, len_side/2] = 2
@@ -185,6 +223,7 @@ if __name__ == '__main__':
     plt.axis('off')
     plt.colorbar()
     plt.savefig('../plots/im000.png')
+    timeseries = []
     for ti in range(timesteps):
         print 'working on timestep', ti
         I_inds_x, I_inds_y = np.where(state_grid == 2)
@@ -196,6 +235,13 @@ if __name__ == '__main__':
                 elev_neighbors = elev_grid[I_inds_x[n]-1:I_inds_x[n]+2,
                                            I_inds_y[n]-1:I_inds_y[n]+2]
 
+                try:
+                    slope_neighbors = calculate_slope_neighbors(elev_neighbors)
+                    if np.any(slope_neighbors > 2):
+                        print slope_neighbors
+                except ValueError:
+                    print 'VALUE ERROR'
+                    continue
                 h_correction = horizontal_component(elev_neighbors)
                 # OLD WAY
                 for neighbor_num, phi in enumerate(neighbor_angles):
@@ -204,21 +250,26 @@ if __name__ == '__main__':
                                          alpha_grid[I_inds_x[n], I_inds_y[n]],
                                          phi, ti)
 
-                    ros *= h_correction[neighbor_locations[neighbor_num, 0],
-                                        neighbor_locations[neighbor_num, 1]]
+                    # correct for horizontal view
+                    # ros *= h_correction[neighbor_locations[neighbor_num, 0],
+                    #                     neighbor_locations[neighbor_num, 1]]
+                    phi_s, phi_w = \
+                    phi_corrections(slope_neighbors[neighbor_locations[neighbor_num, 0],
+                                                    neighbor_locations[neighbor_num, 1]])
 
-                    try:
-                        bucket_grid[I_inds_x[n]
-                                    + neighbor_locations[neighbor_num, 0],
-                                    I_inds_y[n]
-                                    + neighbor_locations[neighbor_num, 1]] \
-                            += (ros / neighbor_distances[neighbor_num])
-                        new_I_inds_x, new_I_inds_y = np.where((bucket_grid >= 1.)
-                                                              & (state_grid ==
-                                                                 1))
-                        state_grid[new_I_inds_x, new_I_inds_y] = 2
-                    except IndexError:
-                        pass
+                    #ros *= (1 + phi_s + phi_w)
+                    # try:
+                    bucket_grid[I_inds_x[n]
+                                + neighbor_locations[neighbor_num, 0],
+                                I_inds_y[n]
+                                + neighbor_locations[neighbor_num, 1]] \
+                        += (ros / neighbor_distances[neighbor_num])
+                    new_I_inds_x, new_I_inds_y = np.where((bucket_grid >= 1.)
+                                                          & (state_grid ==
+                                                             1))
+                    state_grid[new_I_inds_x, new_I_inds_y] = 2
+                    # except IndexError:
+                    #     pass
                 '''
 
                 # NEW WAY, vectorized
@@ -235,10 +286,14 @@ if __name__ == '__main__':
                                                       & (state_grid != 3))
                 state_grid[new_I_inds_x, new_I_inds_y] = 2
                 '''
-
+        temp = np.copy(state_grid)
+        timeseries.append(temp)
         plt.figure()
         plt.imshow(state_grid, cmap=fire_cmap, norm=norm)
         plt.axis('off')
         plt.colorbar()
         plt.savefig('../plots/im%s.png' % str(ti+1).zfill(3))
         plt.close()
+
+    timeseries = np.array(timeseries)
+    np.save('../model_timeseries/mountain.npy', timeseries)
