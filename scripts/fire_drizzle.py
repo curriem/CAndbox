@@ -296,4 +296,4 @@ if __name__ == '__main__':
         plt.close()
 
     timeseries = np.array(timeseries)
-    np.save('../model_timeseries/mountain.npy', timeseries)
+    np.save('../model_timeseries/mountain1.npy', timeseries)
