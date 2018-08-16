@@ -10,7 +10,7 @@ from matplotlib import colors
 
 '''
 
-correction = True
+correction = False
 
 
 def init_grid(len_side):
@@ -20,27 +20,33 @@ def init_grid(len_side):
     #state_grid = np.load('polka.npy')
 
     # start a point fire
-    state_grid[160, 50] = 2
-    bucket_grid[160, 50] = 1.
+    state_grid[40, 25] = 2
+    bucket_grid[40, 25] = 1.
 
     # start a line fire
-    state_grid[160, 140:160] = 2
-    bucket_grid[160, 140:160] = 1
+    # state_grid[160, 140:160] = 2
+    # bucket_grid[160, 140:160] = 1
 
     # block
     # state_grid[98:104, 48:52] = 0
 
     return bucket_grid, state_grid
 
+def init_elev_testcase(len_side):
+    elev_grid = np.zeros((len_side, len_side))
+    for n in range(int(len_side/2)):
+        elev_grid[n:len_side-n, n:len_side-n] = n
+    return elev_grid
+
 
 def init_elev_grid(len_side, flat=False):
-
-    if flat:
+    len_side_div2 = len_side/2
+    if flat: 
         elev_grid = np.zeros((len_side, len_side))
     else:
         # gaussian mountain
-        x, y = np.meshgrid(np.linspace(-100, 100, 200),
-                           np.linspace(-100, 100, 200))
+        x, y = np.meshgrid(np.linspace(-len_side_div2, len_side_div2, len_side),
+                           np.linspace(-len_side_div2, len_side_div2, len_side))
         d = np.sqrt(x*x+y*y)
         sigma, mu = 30.0, 1
         elev_grid = np.exp(-((d-mu)**2 / (2.0 * sigma**2)))
@@ -53,6 +59,21 @@ def init_elev_grid(len_side, flat=False):
     assert False
     '''
     return elev_grid
+
+
+def init_wind_mag_grid(len_side, U_eq):
+    wind_grid = U_eq*np.ones((len_side, len_side))
+    return wind_grid
+
+
+def init_wind_dir_grid(len_side):
+    wind_grid = np.pi * np.ones((len_side, len_side))
+    return wind_grid
+
+
+def init_fuel_grid(len_side, R0):
+    fuel_grid = R0 * np.ones((len_side, len_side))
+    return fuel_grid
 
 
 def rate_of_spread_xy(R0, Ebar, alpha, theta, ti):
@@ -113,15 +134,20 @@ def rate_of_spread(R0, U_eq, alpha, phi, ti):
         assert theta_prime == theta, '%.03f =/= %.03f' % (theta_prime, theta)
 
     else:
+        ### HARD CODED DELETE LATER ####
+        Ebar = 0.5
         ros = R0 * (1-Ebar) / (1-Ebar*np.cos(theta))
 
     return ros
 
 
-def phi_corrections(slope, beta=1, beta_op=1, B=1, C=0, U=1, E=1):
-    phi_s = 5.275 * beta**-0.3 * np.tan(slope)**2
+def phi_corrections(slope, beta=50000, beta_op=1, B=1, C=0, U=1, E=1):
+    phi_s = np.sign(slope)*5.275 * beta**-0.3 * np.tan(slope)**2
     phi_w = C*(3.281*U)**B * (beta/beta_op)**-E
-
+    if np.isnan(phi_s):
+        print 'error:', phi_s
+        print slope
+        assert False
     return phi_s, phi_w
 
 
@@ -156,7 +182,6 @@ def horizontal_component(elev_grid_neighbors):
 
 
 def calculate_slope_neighbors(elev_neighbors):
-
     pix_of_interest_elev = elev_neighbors[1, 1]
 
     delt_elev_neighbors = elev_neighbors - pix_of_interest_elev
@@ -166,36 +191,28 @@ def calculate_slope_neighbors(elev_neighbors):
                           [np.sqrt(2), 1, np.sqrt(2)]]
 
     slope_neighbors = delt_elev_neighbors / distance_neighbors
-
     return slope_neighbors
+
+
+def fire_colormap():
+    fire_cmap = colors.ListedColormap(['blue', 'limegreen',
+                                       'red', 'k'])
+    bounds = [0, 1, 2, 3, 4]
+    norm = colors.BoundaryNorm(bounds, fire_cmap.N)
+
+    return fire_cmap, norm
 
 
 
 if __name__ == '__main__':
-
-
-
-    # need to add a slope parameter that scales R0 as a sigmoid 
-    # maybe arctan(slope)
-
-    # ###### cmap #######
-    fire_cmap = colors.ListedColormap(['blue', 'limegreen',
-                                       'red', 'k'])
-    # bounds = [-0.5, 0.5, 1.5, 2.5, 3.5]
-    bounds = [0, 1, 2, 3, 4]
-    norm = colors.BoundaryNorm(bounds, fire_cmap.N)
-    # ###### cmap #######
+    fire_cmap, norm = fire_colormap()
 
     # params
-    U_eq = 0.012
-    R0 = 0.5
-    timesteps = 400
-    len_side = 200
-    alpha = np.pi - np.pi/4
+    U_eq = 0.78
+    R0 = 1
+    timesteps = 50
+    len_side = 50
 
-    y_start = 80
-
-    # bucket_grid = np.zeros((len_side, len_side))
     neighbor_angles = np.arange(0, 2*np.pi, np.pi/4)
     neighbor_locations = np.array([(+1, 0), (+1, +1), (0, +1), (-1, +1),
                                    (-1, 0), (-1, -1), (0, -1), (+1, -1)])
@@ -203,21 +220,14 @@ if __name__ == '__main__':
                                    1, np.sqrt(2),
                                    1, np.sqrt(2),
                                    1, np.sqrt(2)])
-    # bucket_grid[y_start, len_side/2] = 1.
 
-    Ueq_grid = U_eq*np.ones((len_side, len_side))
-    R0_grid = R0*np.ones((len_side, len_side))
-    # Ebar_grid = np.random.random((len_side, len_side))
-    # R0_grid = np.random.random((len_side, len_side))
-    alpha_grid = alpha * np.ones((len_side, len_side))
-
-    alpha_grid[len_side/2:, :] = np.pi
-
-    elev_grid = init_elev_grid(len_side, flat=False)
-
-    # state_grid = np.ones_like(bucket_grid)
-    # state_grid[y_start, len_side/2] = 2
     bucket_grid, state_grid = init_grid(len_side)
+    wind_mag_grid = init_wind_mag_grid(len_side, U_eq)
+    fuel_grid = init_fuel_grid(len_side, R0)
+    wind_dir_grid = init_wind_dir_grid(len_side)
+    #elev_grid = init_elev_grid(len_side, flat=False)
+    elev_grid = init_elev_testcase(len_side)
+
     plt.figure()
     plt.imshow(state_grid, cmap=fire_cmap, norm=norm)
     plt.axis('off')
@@ -226,66 +236,72 @@ if __name__ == '__main__':
     timeseries = []
     for ti in range(timesteps):
         print 'working on timestep', ti
+
+        # set burnt inds with this loop:
         I_inds_x, I_inds_y = np.where(state_grid == 2)
         for n in range(len(I_inds_x)):
             if np.all(state_grid[I_inds_x[n]-1:I_inds_x[n]+2,
                                  I_inds_y[n]-1:I_inds_y[n]+2] != 1):
+                # if the pixel is surrounded by all burnt, unburnable,
+                # or ignited pixels, set it to burnt
                 state_grid[I_inds_x[n], I_inds_y[n]] = 3
-            else:
-                elev_neighbors = elev_grid[I_inds_x[n]-1:I_inds_x[n]+2,
-                                           I_inds_y[n]-1:I_inds_y[n]+2]
 
-                try:
-                    slope_neighbors = calculate_slope_neighbors(elev_neighbors)
-                    if np.any(slope_neighbors > 2):
-                        print slope_neighbors
-                except ValueError:
-                    print 'VALUE ERROR'
-                    continue
-                h_correction = horizontal_component(elev_neighbors)
-                # OLD WAY
-                for neighbor_num, phi in enumerate(neighbor_angles):
-                    ros = rate_of_spread(R0_grid[I_inds_x[n], I_inds_y[n]],
-                                         Ueq_grid[I_inds_x[n], I_inds_y[n]],
-                                         alpha_grid[I_inds_x[n], I_inds_y[n]],
-                                         phi, ti)
+        # continue lighting with this loop:
+        I_inds_x, I_inds_y = np.where(state_grid == 2)
+        for n in range(len(I_inds_x)):
+            elev_neighbors = elev_grid[I_inds_x[n]-1:I_inds_x[n]+2,
+                                       I_inds_y[n]-1:I_inds_y[n]+2]
 
-                    # correct for horizontal view
-                    # ros *= h_correction[neighbor_locations[neighbor_num, 0],
-                    #                     neighbor_locations[neighbor_num, 1]]
-                    phi_s, phi_w = \
-                    phi_corrections(slope_neighbors[neighbor_locations[neighbor_num, 0],
-                                                    neighbor_locations[neighbor_num, 1]])
+            try:
+                slope_neighbors = calculate_slope_neighbors(elev_neighbors)
+            except ValueError:
+                print 'VALUE ERROR'
+                continue
+            h_correction = horizontal_component(elev_neighbors)
 
-                    #ros *= (1 + phi_s + phi_w)
-                    # try:
-                    bucket_grid[I_inds_x[n]
-                                + neighbor_locations[neighbor_num, 0],
-                                I_inds_y[n]
-                                + neighbor_locations[neighbor_num, 1]] \
-                        += (ros / neighbor_distances[neighbor_num])
-                    new_I_inds_x, new_I_inds_y = np.where((bucket_grid >= 1.)
-                                                          & (state_grid ==
-                                                             1))
-                    state_grid[new_I_inds_x, new_I_inds_y] = 2
-                    # except IndexError:
-                    #     pass
-                '''
+            # OLD WAY
+            for neighbor_num, phi in enumerate(neighbor_angles):
+                ros = rate_of_spread(fuel_grid[I_inds_x[n], I_inds_y[n]],
+                                     wind_mag_grid[I_inds_x[n], I_inds_y[n]],
+                                     wind_dir_grid[I_inds_x[n], I_inds_y[n]],
+                                     phi, ti)
 
-                # NEW WAY, vectorized
-                neighbor_nums = np.arange(0, len(neighbor_angles))
-                ros = rate_of_spread(R0_grid[I_inds_x[n], I_inds_y[n]],
-                                     Ueq_grid[I_inds_x[n], I_inds_y[n]],
-                                     alpha, neighbor_angles, ti)
+                # correct for horizontal view
+                # THE H CORRECTION CODE IS NOT RIGHT!!!!
+                # ros *= h_correction[neighbor_locations[neighbor_num, 0],
+                #                     neighbor_locations[neighbor_num, 1]]
+                phi_s, phi_w = \
+                phi_corrections(slope_neighbors[neighbor_locations[neighbor_num, 0]
+                                                + 1,
+                                                neighbor_locations[neighbor_num, 1]
+                                                + 1])
+                ros = ros * (1 + phi_s + phi_w)
                 bucket_grid[I_inds_x[n]
-                            + neighbor_locations[neighbor_nums, 0],
+                            + neighbor_locations[neighbor_num, 0],
                             I_inds_y[n]
-                            + neighbor_locations[neighbor_nums, 1]] \
-                    += (ros / neighbor_distances[neighbor_nums])
+                            + neighbor_locations[neighbor_num, 1]] \
+                    += (ros / neighbor_distances[neighbor_num])
                 new_I_inds_x, new_I_inds_y = np.where((bucket_grid >= 1.)
-                                                      & (state_grid != 3))
+                                                      & (state_grid ==
+                                                         1))
                 state_grid[new_I_inds_x, new_I_inds_y] = 2
-                '''
+            '''
+
+            # NEW WAY, vectorized
+            neighbor_nums = np.arange(0, len(neighbor_angles))
+            ros = rate_of_spread(fuel_grid[I_inds_x[n], I_inds_y[n]],
+                                 wind_mag_grid[I_inds_x[n], I_inds_y[n]],
+                                 wind_dir_grid[I_inds_x[n], I_inds_y[n]],
+                                 neighbor_angles, ti)
+            bucket_grid[I_inds_x[n]
+                        + neighbor_locations[neighbor_nums, 0],
+                        I_inds_y[n]
+                        + neighbor_locations[neighbor_nums, 1]] \
+                += (ros / neighbor_distances[neighbor_nums])
+            new_I_inds_x, new_I_inds_y = np.where((bucket_grid >= 1.)
+                                                  & (state_grid == 1))
+            state_grid[new_I_inds_x, new_I_inds_y] = 2
+        '''
         temp = np.copy(state_grid)
         timeseries.append(temp)
         plt.figure()
@@ -296,4 +312,4 @@ if __name__ == '__main__':
         plt.close()
 
     timeseries = np.array(timeseries)
-    np.save('../model_timeseries/mountain1.npy', timeseries)
+    np.save('../model_timeseries/testcase.npy', timeseries)
