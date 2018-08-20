@@ -1,0 +1,33 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{authblk}
+
+
+\author[1, 2]{David Robinson}
+\author[1, 2]{Miles Currie}
+\author[1, 2]{Bryan Quaife}
+\author[1]{Kevin Speer}
+
+\affil[1]{Geophysical Fluid Dynamics Institute}
+\affil[2]{FSU Department of Scientific Computing}
+
+\title{CAndbox: Modeling Fire Spread on Real-Time Interactive Terrain}
+\date{}
+
+\begin{document}
+
+
+\maketitle
+
+\begin{abstract}
+Modeling the spread of forest fires via cellular automata is an attractive approach for its efficient computational implementation, and the surprising realism of deceptively simple algorithms in simple geometries. However, applying this method to a real wildland fire environment with complex fuel, topography, and wind requires substantial parameterization. An established approach is to use pixel-by-pixel rates of spread derived from the Rothermel model, but these models do not integrate over the contributions of multiple ignited pixels and only allow a discrete number of states. We present a new method which allows for semi-discrete states by summing over the contribution of all ignited pixels on a combustable pixel within a given neighborhood. Folding together the effects of terrain and wind speed, we employ an extended Rothermel model to form an ``effective spread ellipse'' defined by the rate of spread an ignited pixel contributes in any direction. Furthermore, we tune the model to real fire data using Bayesian inference. Because of the computational efficiency of this method, we are able to apply it to a “sandbox", an augmented reality projection system. Initially designed to demonstrate fluid flow on an evolvable surface, this system allows the fire model to facilitate real-time adjustments to topography and burning regions. Additionally, the system handles complex initial fire shapes while remaining intuitive to the user. The outcome is a tool that is ideal for exploring the effect of topography on the spread rates of fire in a real-time environment.
+
+\end{abstract}
+
+
+\section{Introduction}
+This is the introduction
+
+\section{•}
+
+\end{document}
