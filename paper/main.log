@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  24 AUG 2018 14:32
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  24 AUG 2018 14:34
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -812,43 +812,92 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
 LaTeX Warning: Citation `ghisu15' on page 4 undefined on input line 124.
 
-[4] [5] <figures/fire_bucket_ex.png, id=36, 253.94875pt x 243.91125pt>
-File: figures/fire_bucket_ex.png Graphic file (type png)
+[4] [5]
 
-<use figures/fire_bucket_ex.png>
-Package pdftex.def Info: figures/fire_bucket_ex.png used on input line 168.
-(pdftex.def)             Requested size: 207.0021pt x 198.82498pt.
+LaTeX Warning: File `figures/fire_bucket_ex.png' not found on input line 168.
+
+
+! Package pdftex.def Error: File `figures/fire_bucket_ex.png' not found.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.168 ....6\textwidth]{figures/fire_bucket_ex.png}
+                                                  
+Using draft setting for this image.
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-<figures/multi_im000.png, id=38, 273.9033pt x 291.9708pt>
-File: figures/multi_im000.png Graphic file (type png)
 
-<use figures/multi_im000.png>
-Package pdftex.def Info: figures/multi_im000.png used on input line 207.
-(pdftex.def)             Requested size: 207.0021pt x 220.66603pt.
+LaTeX Warning: File `figures/multi_im000.png' not found on input line 207.
 
-<figures/multi_im049.png, id=39, 273.9033pt x 291.9708pt>
-File: figures/multi_im049.png Graphic file (type png)
 
-<use figures/multi_im049.png>
-Package pdftex.def Info: figures/multi_im049.png used on input line 207.
-(pdftex.def)             Requested size: 207.0021pt x 220.66603pt.
+! Package pdftex.def Error: File `figures/multi_im000.png' not found.
 
-<figures/multi_im099.png, id=40, 273.9033pt x 291.9708pt>
-File: figures/multi_im099.png Graphic file (type png)
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.207 ...h=0.6\textwidth]{figures/multi_im000.png}
+                                                   \includegraphics[width=0....
 
-<use figures/multi_im099.png>
-Package pdftex.def Info: figures/multi_im099.png used on input line 208.
-(pdftex.def)             Requested size: 207.0021pt x 220.66603pt.
+Using draft setting for this image.
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
 
-<figures/multi_im149.png, id=41, 273.9033pt x 291.9708pt>
-File: figures/multi_im149.png Graphic file (type png)
 
-<use figures/multi_im149.png>
-Package pdftex.def Info: figures/multi_im149.png used on input line 208.
-(pdftex.def)             Requested size: 207.0021pt x 220.66603pt.
+LaTeX Warning: File `figures/multi_im049.png' not found on input line 207.
+
+
+! Package pdftex.def Error: File `figures/multi_im049.png' not found.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.207 ...h=0.6\textwidth]{figures/multi_im049.png}
+                                                  
+Using draft setting for this image.
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+LaTeX Warning: File `figures/multi_im099.png' not found on input line 208.
+
+
+! Package pdftex.def Error: File `figures/multi_im099.png' not found.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.208 ...h=0.6\textwidth]{figures/multi_im099.png}
+                                                  \includegraphics[width=0.6...
+
+Using draft setting for this image.
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+LaTeX Warning: File `figures/multi_im149.png' not found on input line 208.
+
+
+! Package pdftex.def Error: File `figures/multi_im149.png' not found.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.208 ...h=0.6\textwidth]{figures/multi_im149.png}
+                                                  
+Using draft setting for this image.
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
 
 Overfull \hbox (71.22643pt too wide) in paragraph at lines 207--209
 [][] []
@@ -859,19 +908,17 @@ Overfull \hbox (69.00421pt too wide) in paragraph at lines 207--209
 [][] 
  []
 
-[6 <./figures/fire_bucket_ex.png>] [7 <./figures/multi_im000.png> <./figures/mu
-lti_im049.png> <./figures/multi_im099.png> <./figures/multi_im149.png>]
-[8] (./main.aux)
+[6] [7] [8] (./main.aux)
 
 LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 12383 strings out of 493014
- 249342 string characters out of 6133351
+ 12365 strings out of 493014
+ 248776 string characters out of 6133351
  286626 words of memory out of 5000000
- 15668 multiletter control sequences out of 15000+600000
- 8502 words of font info for 30 fonts, out of 8000000 for 9000
+ 15649 multiletter control sequences out of 15000+600000
+ 8670 words of font info for 31 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  62i,10n,80p,1602b,606s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
@@ -888,11 +935,12 @@ xlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texli
 ve/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/
 2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/201
 6/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2016
-/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on main.pdf (8 pages, 231271 bytes).
+/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2016/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on main.pdf (8 pages, 196248 bytes).
 PDF statistics:
- 105 PDF objects out of 1000 (max. 8388607)
- 69 compressed objects within 1 object stream
+ 98 PDF objects out of 1000 (max. 8388607)
+ 71 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 38 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 13 words of extra memory for PDF output out of 10000 (max. 10000000)
 
