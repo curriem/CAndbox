@@ -132,25 +132,41 @@ Because the Rothermel model in Equation~\ref{eq:rothermel} does not include a mo
 
 
 \begin{equation}
-\Phi_s = 5.275\beta^{-0.3}\tan(\phi)^2
+\Phi_s = 5.275\beta^{-0.3}\tan^2(\phi)
 \end{equation}
 \note{we need to check on the tan value. not sure whether $\phi$ is squared or $\tan(\phi)$ is squared}
 \todo[inline]{Where is the squared and why?  What is $\phi$?  Can
 $\Phi_s$ ever be negative?  If not, the ROS ellipse will always grow
-regardless of the slope which is incorrect.}
+regardless of the slope which is incorrect.
+
+
+ - Rothermel 1972 says that it is the whole thing squared, i.e. $(\tan(\phi))^2$
+ 
+ - Why? Because it fits the data. (Couldn't find a better explanation.)
+ 
+ -  $\tan(\phi)$ is the slope, not $\phi$
+  
+  - $\phi$ is the ratio of change in elevation to change in pixel distance, not an angle
+  
+  - $\Phi_s$ can never be negative because Rothermel never tested downward slopes. He took data for upward slopes and fit it accordingly. 
+  
+  - I think we need to find something new for downward slopes. Surely there must be a paper about this somewhere... 
+  
+ 
+}
 \begin{equation}
 \Phi_w = C(3.28U)^B\left(\frac{\beta}{\beta_{op}}\right)^{-E}
 \end{equation}
 \note{$\Phi_w$ is left out of my code at the moment}
 
-where b is the packing ratio of the fuel bed and f is the slope (radians), U is the midflame windspeed ($\frac{m}{s}$), and the C, B, and E coefficients are functions of the fuel particle sizes in the fuel bed \cite{}(Burgan 1987; Rothermel 1972).
+where $\beta$ is the packing ratio of the fuel bed, $\beta_{op}$ is the optimum packing ratio \note{(references for $\beta$s are in FARSITE paper)}, $\phi$ is the slope (radians), U is the midflame windspeed ($\frac{m}{s}$), and the C, B, and E coefficients are functions of the fuel particle sizes in the fuel bed \cite{}(Burgan 1987; Rothermel 1972).
 
 Table~\ref{tab:inputsummary} summarizes all input parameters for the Rothermel model and where the algorithm finds them. We input these parameters in the Rothermel model to obtain rate-of-spread valuse for the eight nearest neighbors of a given cell. We treat these values as energy values, filling up the energy buckets in the neighboring cells. Figure~\ref{fig:buckets} shows an example of this with an ellipse of eccentricity $0.5$. The cell in the direction of maximum spread gets the most energy from this ellipse, thus it fills up faster than the rest of its neighbors. The biggest advantage to this method is that neighboring cells also in the ``I'' state can contribute to the ignition of ``N'' cells which share the same neighborhood as other ``I'' cells. 
 
 \begin{figure}
 \centering
 \includegraphics[width=0.6\textwidth]{fire_bucket_ex.png}
-\caption{An example of a $0.5$ eccentricity rate-of-spread ellipse's energy contribution on neighboring cells. These values are calculated from Equation~\ref{eq} with $R_0 = 1$ and $\overline{E} = 0.5$ (eccentricity). In this example, and with a combustion threshold of $1$, the cell directly to the north will change states from ``N'' to ``I'' in this timestep. It will be able to make contributions to its respective neighbors in the next timestep. The remaining values are saved and new rate-of-spread values will be added to them in subsequent timesteps until they pass the combustion threshold.\label{fig:buckets}}
+\caption{An example of a $0.5$ eccentricity rate-of-spread ellipse's energy contribution on neighboring cells. These values are calculated from Equation~\ref{eq:rothermel} with $R_0 = 1$ and $\overline{E} = 0.5$ (eccentricity). In this example, and with a combustion threshold of $1$, the cell directly to the north will change states from ``N'' to ``I'' in this timestep. It will be able to make contributions to its respective neighbors in the next timestep. The remaining values are saved and new rate-of-spread values will be added to them in subsequent timesteps until they pass the combustion threshold.\label{fig:buckets}}
 \end{figure}
 
 Once cells' energy buckets are filled up to a certain threshold, we change the state of the cell from ``N'' to ``I'' and these cells are able to contribute to their neighbors in subsequent timesteps. After reassigning these states, the process for one timestep is complete and the next timestep begins. 
@@ -185,6 +201,14 @@ Once cells' energy buckets are filled up to a certain threshold, we change the s
 
 
 \end{table}
+
+
+\begin{figure}
+\includegraphics[width=0.6\textwidth]{multi_im000.png} \includegraphics[width=0.6\textwidth]{multi_im049.png}
+\includegraphics[width=0.6\textwidth]{multi_im099.png}\includegraphics[width=0.6\textwidth]{multi_im149.png}
+\caption{This is the model\label{fig:modelims}}
+\end{figure}
+
 
 \section{Sandbox}
 David
