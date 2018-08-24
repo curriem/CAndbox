@@ -3,6 +3,7 @@
 \usepackage{authblk}
 \usepackage{color}
 \usepackage{graphicx}
+\usepackage{todonotes}
 
 
 %\newcommand{\note}[1]{\textcolor{red}{#1}\xspace}
@@ -134,8 +135,11 @@ Because the Rothermel model in Equation~\ref{eq:rothermel} does not include a mo
 \Phi_s = 5.275\beta^{-0.3}\tan(\phi)^2
 \end{equation}
 \note{we need to check on the tan value. not sure whether $\phi$ is squared or $\tan(\phi)$ is squared}
+\todo[inline]{Where is the squared and why?  What is $\phi$?  Can
+$\Phi_s$ ever be negative?  If not, the ROS ellipse will always grow
+regardless of the slope which is incorrect.}
 \begin{equation}
-\Phi_w = C(3.28U)^B(\frac{\beta}{\beta_{op}})^{-E}
+\Phi_w = C(3.28U)^B\left(\frac{\beta}{\beta_{op}}\right)^{-E}
 \end{equation}
 \note{$\Phi_w$ is left out of my code at the moment}
 
