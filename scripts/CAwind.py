@@ -20,7 +20,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='CA wind')
 parser.add_argument('save_file',
-                    help='name of file you want to save output as, should be.npy')
+                    help='name of file you want to save output, (.npy)')
 args = parser.parse_args()
 
 
@@ -111,7 +111,7 @@ def initialFire(len_side, fireType):
 
 def make_timeseries(frames, len_side, num_t):
 
-    eps = 10**(-3)
+    epsilon = 1e-3
     fireType = 'line'
     neighbor_radius = 1
     masterBurnTime = 3
@@ -135,43 +135,41 @@ def make_timeseries(frames, len_side, num_t):
         uD[fire_x, fire_y] = beta
         vD[fire_x, fire_y] = 0.
 
-        # what is this doing?
-        # looks like getting the distance from pix to pix
         for n in range(len(fire_x)):
             rx = fire_x - fire_x[n]
             ry = fire_y - fire_y[n]
-            r2 = rx**2 + ry**2 # is this supposed to be normalized?
-            offset_term = (alpha/(2*np.pi))*rx/(r2+eps**2.)
+            r2 = rx**2 + ry**2  # is this supposed to be normalized?
+            offset_term = (alpha/(2*np.pi))*rx/(r2+epsilon**2.)
             uD[fire_x, fire_y] = uD[fire_x, fire_y] - offset_term
             vD[fire_x, fire_y] = vD[fire_x, fire_y] - offset_term
 
-        # the thing below doesn't work yet need advanced slicing
-        # (not sure if that exists in python)
-        neighbors_new = \
-        fireGrid[fire_x-neighbor_radius:fire_x+neighbor_radius+1,
-                 fire_y-neighbor_radius:fire_y+neighbor_radius+1]
-        print neighbors_new
-        for [x, y] in fireInds.T:
         for n in range(len(fire_x)):
-            neighbors = fireGrid[x-neighbor_radius:x+neighbor_radius+1,
-                                 y-neighbor_radius:y+neighbor_radius+1]
-            print neighbors
-            assert False
-            # not sure what this is doing
-            if np.array_equal(np.array(neighbors.shape),
-                              np.array([2.*neighbor_radius+1,
-                                        2.*neighbor_radius+1])) == False:
+            neighbors = fireGrid[fire_x[n]-neighbor_radius:
+                                 fire_x[n]+neighbor_radius+1,
+                                 fire_y[n]-neighbor_radius:
+                                 fire_y[n]+neighbor_radius+1]
+
+            try:
+                assert neighbors.shape == (2.*neighbor_radius+1,
+                                           2.*neighbor_radius+1)
+            except AssertionError:
                 continue
+
             randProb = rand_probs(neighbor_radius)
 
-            AlphaD = np.arctan2(vD[x, y],
-                                (uD[x, y]+eps))
+            AlphaD = np.arctan2(vD[fire_x[n], fire_y[n]],
+                                (uD[fire_x[n], fire_y[n]]))
 
-            windMag = np.tanh(gamma*np.linalg.norm([uD[x, y], vD[x, y]]))
+            windMag = np.tanh(gamma*np.linalg.norm([uD[fire_x[n],
+                                                       fire_y[n]],
+                                                    vD[fire_x[n],
+                                                       fire_y[n]]]))
 
             windMag *= masterProb
 
-            probThresh = probability_matrix(neighbor_radius, masterProb, windMag, AlphaD)
+            probThresh = probability_matrix(neighbor_radius,
+                                            masterProb, windMag,
+                                            AlphaD)
 
             probThresh *= (np.ones_like(probThresh)
                            - np.abs(neighbors))
@@ -180,22 +178,25 @@ def make_timeseries(frames, len_side, num_t):
 
             neighbors[newFireInds[0], newFireInds[1]] = 1
 
-            fireGrid[x-neighbor_radius:x+neighbor_radius+1,
-                     y-neighbor_radius:y+neighbor_radius+1] = neighbors
-            fireGrid[x, y] += 1
+            fireGrid[fire_x[n]-neighbor_radius:
+                     fire_x[n]+neighbor_radius+1,
+                     fire_y[n]-neighbor_radius:
+                     fire_y[n]+neighbor_radius+1] = neighbors
+
+            fireGrid[fire_x[n], fire_y[n]] += 1
 
         burntInds = np.array(np.where(fireGrid > burnTimes))
         fireGrid[burntInds[0], burntInds[1]] = -1
         plot_frame(fireGrid, vmin=-1, vmax=4, title=t+1)
         burningInds = np.array(np.where(fireGrid > 0))
         frames[burningInds[0], burningInds[1], t] += 1
-        # have to do this because python is stupid sometimes
+
         temp = np.copy(fireGrid)
         fireTimeseries.append(temp)
 
     fireTimeseries = np.array(fireTimeseries)
 
-    np.save('../model_data/CA_type=%s_layers=%i_burnTime=%i_wind=%s.npy'
+    np.save('../model_timeseries/CA_type=%s_layers=%i_burnTime=%i_wind=%s.npy'
             % (fireType, neighbor_radius,
                masterBurnTime, str(windMag)), fireTimeseries)
 
@@ -206,7 +207,7 @@ if __name__ == '__main__':
 
     num_reps = 1
     t = 70  # Number of time steps
-    len_side = 100 # Grid Size
+    len_side = 100  # Grid Size
     frames = np.zeros([len_side, len_side, t])
     for i in range(num_reps):
         make_timeseries(frames, len_side, t)

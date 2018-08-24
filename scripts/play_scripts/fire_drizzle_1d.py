@@ -14,21 +14,14 @@ correction = False
 num_neighbors = 8
 
 def init_grid(len_side, lake):
-    state_grid = np.ones((len_side, len_side))
-    bucket_grid = np.zeros((len_side, len_side))
+    state_grid = np.ones((len_side, 1))
+    bucket_grid = np.zeros((len_side, 1))
     if lake:
         state_grid = np.load('lake2.npy')
 
     # start a point fire
-    state_grid[160, 50] = 2
-    bucket_grid[160, 50] = 1.
-
-    # start a line fire
-    state_grid[160, 140:160] = 2
-    bucket_grid[160, 140:160] = 1
-
-    # block
-    # state_grid[98:104, 48:52] = 0
+    state_grid[50, 0] = 2
+    bucket_grid[50, 0] = 1.
 
     return bucket_grid, state_grid
 
@@ -42,7 +35,7 @@ def init_elev_testcase(len_side):
 def init_elev_grid(len_side, flat=False):
     len_side_div2 = len_side/2
     if flat: 
-        elev_grid = np.zeros((len_side, len_side))
+        elev_grid = np.zeros((len_side, 1))
     else:
         # gaussian mountain
         x, y = np.meshgrid(np.linspace(-len_side_div2, len_side_div2, len_side),
@@ -62,19 +55,19 @@ def init_elev_grid(len_side, flat=False):
 
 
 def init_wind_mag_grid(len_side, U_eq):
-    wind_grid = U_eq*np.ones((len_side, len_side))
+    wind_grid = U_eq*np.ones((len_side, 1))
     return wind_grid
 
 
 def init_wind_dir_grid(len_side, wind90):
-    wind_grid = np.pi * np.ones((len_side, len_side))
+    wind_grid = np.pi * np.ones((len_side, 1))
     if wind90:
         wind_grid[:100, :] = np.pi/2
     return wind_grid
 
 
 def init_fuel_grid(len_side, R0):
-    fuel_grid = R0 * np.ones((len_side, len_side))
+    fuel_grid = R0 * np.ones((len_side, 1))
     return fuel_grid
 
 
@@ -99,7 +92,6 @@ def rate_of_spread_xy(R0, Ebar, alpha, theta, ti):
 
 
 def rate_of_spread(R0, U_eq, alpha, phi, ti):
-
     # from the Farsite paper: the original paper's units were wrong probably
     LW = 0.936*np.exp(0.2566*U_eq) + 0.461*np.exp(-0.1548*U_eq) - 0.397
     Ebar = np.sqrt(1 - 1/LW**2)
@@ -191,13 +183,11 @@ def horizontal_component(elev_grid_neighbors):
 
 
 def calculate_slope_neighbors(elev_neighbors):
-    pix_of_interest_elev = elev_neighbors[1, 1]
+    pix_of_interest_elev = elev_neighbors[1]
 
     delt_elev_neighbors = elev_neighbors - pix_of_interest_elev
 
-    distance_neighbors = [[np.sqrt(2), 1, np.sqrt(2)],
-                          [1, 0, 1],
-                          [np.sqrt(2), 1, np.sqrt(2)]]
+    distance_neighbors = [1, 0, 1]
 
     slope_neighbors = delt_elev_neighbors / distance_neighbors
     return slope_neighbors
@@ -229,16 +219,13 @@ def run_code(flat, pyramid, lake, wind90, save_name):
     # params
     U_eq = 0.78
     R0 = 1
-    timesteps = 200
-    len_side = 200
+    timesteps = 140
+    len_side = 100
 
-    neighbor_angles = np.arange(0, 2*np.pi, np.pi/4)
-    neighbor_locations = np.array([(+1, 0), (+1, +1), (0, +1), (-1, +1),
-                                   (-1, 0), (-1, -1), (0, -1), (+1, -1)])
-    neighbor_distances = np.array([1, np.sqrt(2),
-                                   1, np.sqrt(2),
-                                   1, np.sqrt(2),
-                                   1, np.sqrt(2)])
+    neighbor_angles = [0, np.pi]
+    neighbor_locations = np.array([(+1, 0),
+                                   (-1, 0)])
+    neighbor_distances = np.array([1, 1])
 
     bucket_grid, state_grid = init_grid(len_side, lake)
     wind_mag_grid = init_wind_mag_grid(len_side, U_eq)
@@ -258,7 +245,7 @@ def run_code(flat, pyramid, lake, wind90, save_name):
         I_inds_x, I_inds_y = np.where(state_grid == 2)
         for n in range(len(I_inds_x)):
             if np.all(state_grid[I_inds_x[n]-1:I_inds_x[n]+2,
-                                 I_inds_y[n]-1:I_inds_y[n]+2] != 1):
+                                 I_inds_y[n]] != 1):
                 # if the pixel is surrounded by all burnt, unburnable,
                 # or ignited pixels, set it to burnt
                 state_grid[I_inds_x[n], I_inds_y[n]] = 3
@@ -267,13 +254,12 @@ def run_code(flat, pyramid, lake, wind90, save_name):
         I_inds_x, I_inds_y = np.where(state_grid == 2)
         for n in range(len(I_inds_x)):
             elev_neighbors = elev_grid[I_inds_x[n]-1:I_inds_x[n]+2,
-                                       I_inds_y[n]-1:I_inds_y[n]+2]
+                                       I_inds_y[n]]
 
-            try:
-                slope_neighbors = calculate_slope_neighbors(elev_neighbors)
-            except ValueError:
-                continue
-            h_correction = horizontal_component(elev_neighbors)
+            slope_neighbors = calculate_slope_neighbors(elev_neighbors)
+            #except ValueError:
+            #    continue
+    #        h_correction = horizontal_component(elev_neighbors)
 
             # OLD WAY
             for neighbor_num, phi in enumerate(neighbor_angles):
@@ -282,14 +268,13 @@ def run_code(flat, pyramid, lake, wind90, save_name):
                                      wind_dir_grid[I_inds_x[n], I_inds_y[n]],
                                      phi, ti)
 
+                print ros
                 # correct for horizontal view
                 # THE H CORRECTION CODE IS NOT RIGHT!!!!
                 # ros *= h_correction[neighbor_locations[neighbor_num, 0],
                 #                     neighbor_locations[neighbor_num, 1]]
                 phi_s, phi_w = \
                 phi_corrections(slope_neighbors[neighbor_locations[neighbor_num, 0]
-                                                + 1,
-                                                neighbor_locations[neighbor_num, 1]
                                                 + 1])
                 ros = ros * (1 + phi_s + phi_w)
                 bucket_grid[I_inds_x[n]
@@ -329,13 +314,7 @@ def run_code(flat, pyramid, lake, wind90, save_name):
 
 if __name__ == '__main__':
     run_code(flat=True, pyramid=False, lake=False, wind90=False,
-             save_name='flat')
-    run_code(flat=False, pyramid=True, lake=False, wind90=False,
-             save_name='pyramid')
-    run_code(flat=True, pyramid=False, lake=True, wind90=False,
-             save_name='lake')
-    run_code(flat=True, pyramid=False, lake=False, wind90=True,
-             save_name='wind90')
+             save_name='flat_1d')
 
 
 
