@@ -11,21 +11,21 @@ from matplotlib import colors
 '''
 
 correction = False
+num_neighbors = 8
 
-
-def init_grid(len_side):
+def init_grid(len_side, lake):
     state_grid = np.ones((len_side, len_side))
     bucket_grid = np.zeros((len_side, len_side))
-
-    #state_grid = np.load('polka.npy')
+    if lake:
+        state_grid = np.load('lake2.npy')
 
     # start a point fire
-    state_grid[40, 25] = 2
-    bucket_grid[40, 25] = 1.
+    state_grid[160, 50] = 2
+    bucket_grid[160, 50] = 1.
 
     # start a line fire
-    # state_grid[160, 140:160] = 2
-    # bucket_grid[160, 140:160] = 1
+    state_grid[160, 140:160] = 2
+    bucket_grid[160, 140:160] = 1
 
     # block
     # state_grid[98:104, 48:52] = 0
@@ -66,8 +66,10 @@ def init_wind_mag_grid(len_side, U_eq):
     return wind_grid
 
 
-def init_wind_dir_grid(len_side):
+def init_wind_dir_grid(len_side, wind90):
     wind_grid = np.pi * np.ones((len_side, len_side))
+    if wind90:
+        wind_grid[:100, :] = np.pi/2
     return wind_grid
 
 
@@ -112,6 +114,13 @@ def rate_of_spread(R0, U_eq, alpha, phi, ti):
         k4 = 0
         k5 = 0
 
+        # k values for Ebar = 0.5:
+        k1 = 1.
+        k2 = 1.15
+        k3 = 1.850
+        k4 =  1.7
+        k5 = 1.55
+
         R0_prime = k1*R0
         Ebar_prime = np.sqrt(1 - 1/LW**k2)
         if (k3 == 0) and (k4 == 0):
@@ -129,9 +138,9 @@ def rate_of_spread(R0, U_eq, alpha, phi, ti):
                            - (1-Ebar)/(1+Ebar))
                * (np.abs(theta_prime)/np.pi)**k5)
 
-        assert Ebar_prime == Ebar, '%.03f =/= %.03f' % (Ebar_prime, Ebar)
-        assert R0_prime == R0, '%.03f =/= %.03f' % (R0_prime, R0)
-        assert theta_prime == theta, '%.03f =/= %.03f' % (theta_prime, theta)
+        # assert Ebar_prime == Ebar, '%.03f =/= %.03f' % (Ebar_prime, Ebar)
+        # assert R0_prime == R0, '%.03f =/= %.03f' % (R0_prime, R0)
+        # assert theta_prime == theta, '%.03f =/= %.03f' % (theta_prime, theta)
 
     else:
         ### HARD CODED DELETE LATER ####
@@ -203,15 +212,25 @@ def fire_colormap():
     return fire_cmap, norm
 
 
-
-if __name__ == '__main__':
+def plot_frame(frame, savepath):
     fire_cmap, norm = fire_colormap()
+
+    plt.figure()
+    plt.imshow(frame, cmap=fire_cmap, norm=norm)
+    plt.axis('off')
+    plt.colorbar()
+    plt.savefig(savepath)
+    plt.close()
+
+
+
+def run_code(flat, pyramid, lake, wind90, save_name):
 
     # params
     U_eq = 0.78
     R0 = 1
-    timesteps = 50
-    len_side = 50
+    timesteps = 200
+    len_side = 200
 
     neighbor_angles = np.arange(0, 2*np.pi, np.pi/4)
     neighbor_locations = np.array([(+1, 0), (+1, +1), (0, +1), (-1, +1),
@@ -221,18 +240,16 @@ if __name__ == '__main__':
                                    1, np.sqrt(2),
                                    1, np.sqrt(2)])
 
-    bucket_grid, state_grid = init_grid(len_side)
+    bucket_grid, state_grid = init_grid(len_side, lake)
     wind_mag_grid = init_wind_mag_grid(len_side, U_eq)
     fuel_grid = init_fuel_grid(len_side, R0)
-    wind_dir_grid = init_wind_dir_grid(len_side)
-    #elev_grid = init_elev_grid(len_side, flat=False)
-    elev_grid = init_elev_testcase(len_side)
+    wind_dir_grid = init_wind_dir_grid(len_side, wind90)
+    if flat:
+        elev_grid = init_elev_grid(len_side, flat=True)
+    if pyramid:
+        elev_grid = init_elev_testcase(len_side)
 
-    plt.figure()
-    plt.imshow(state_grid, cmap=fire_cmap, norm=norm)
-    plt.axis('off')
-    plt.colorbar()
-    plt.savefig('../plots/im000.png')
+    plot_frame(state_grid, '../plots/im000.png')
     timeseries = []
     for ti in range(timesteps):
         print 'working on timestep', ti
@@ -255,7 +272,6 @@ if __name__ == '__main__':
             try:
                 slope_neighbors = calculate_slope_neighbors(elev_neighbors)
             except ValueError:
-                print 'VALUE ERROR'
                 continue
             h_correction = horizontal_component(elev_neighbors)
 
@@ -304,12 +320,22 @@ if __name__ == '__main__':
         '''
         temp = np.copy(state_grid)
         timeseries.append(temp)
-        plt.figure()
-        plt.imshow(state_grid, cmap=fire_cmap, norm=norm)
-        plt.axis('off')
-        plt.colorbar()
-        plt.savefig('../plots/im%s.png' % str(ti+1).zfill(3))
-        plt.close()
+
+        plot_frame(state_grid, '../plots/im%s.png' % str(ti+1).zfill(3))
 
     timeseries = np.array(timeseries)
-    np.save('../model_timeseries/testcase.npy', timeseries)
+    np.save('../model_timeseries/%s.npy' % save_name, timeseries)
+
+
+if __name__ == '__main__':
+    run_code(flat=True, pyramid=False, lake=False, wind90=False,
+             save_name='flat')
+    run_code(flat=False, pyramid=True, lake=False, wind90=False,
+             save_name='pyramid')
+    run_code(flat=True, pyramid=False, lake=True, wind90=False,
+             save_name='lake')
+    run_code(flat=True, pyramid=False, lake=False, wind90=True,
+             save_name='wind90')
+
+
+
