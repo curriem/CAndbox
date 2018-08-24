@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  24 AUG 2018 13:47
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  24 AUG 2018 14:32
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -812,38 +812,42 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
 LaTeX Warning: Citation `ghisu15' on page 4 undefined on input line 124.
 
-[4] [5] <fire_bucket_ex.png, id=36, 253.94875pt x 243.91125pt>
-File: fire_bucket_ex.png Graphic file (type png)
+[4] [5] <figures/fire_bucket_ex.png, id=36, 253.94875pt x 243.91125pt>
+File: figures/fire_bucket_ex.png Graphic file (type png)
 
-<use fire_bucket_ex.png>
-Package pdftex.def Info: fire_bucket_ex.png used on input line 168.
+<use figures/fire_bucket_ex.png>
+Package pdftex.def Info: figures/fire_bucket_ex.png used on input line 168.
 (pdftex.def)             Requested size: 207.0021pt x 198.82498pt.
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-<multi_im000.png, id=38, 273.9033pt x 291.9708pt>
-File: multi_im000.png Graphic file (type png)
- <use multi_im000.png>
-Package pdftex.def Info: multi_im000.png used on input line 207.
+<figures/multi_im000.png, id=38, 273.9033pt x 291.9708pt>
+File: figures/multi_im000.png Graphic file (type png)
+
+<use figures/multi_im000.png>
+Package pdftex.def Info: figures/multi_im000.png used on input line 207.
 (pdftex.def)             Requested size: 207.0021pt x 220.66603pt.
 
-<multi_im049.png, id=39, 273.9033pt x 291.9708pt>
-File: multi_im049.png Graphic file (type png)
- <use multi_im049.png>
-Package pdftex.def Info: multi_im049.png used on input line 207.
+<figures/multi_im049.png, id=39, 273.9033pt x 291.9708pt>
+File: figures/multi_im049.png Graphic file (type png)
+
+<use figures/multi_im049.png>
+Package pdftex.def Info: figures/multi_im049.png used on input line 207.
 (pdftex.def)             Requested size: 207.0021pt x 220.66603pt.
 
-<multi_im099.png, id=40, 273.9033pt x 291.9708pt>
-File: multi_im099.png Graphic file (type png)
- <use multi_im099.png>
-Package pdftex.def Info: multi_im099.png used on input line 208.
+<figures/multi_im099.png, id=40, 273.9033pt x 291.9708pt>
+File: figures/multi_im099.png Graphic file (type png)
+
+<use figures/multi_im099.png>
+Package pdftex.def Info: figures/multi_im099.png used on input line 208.
 (pdftex.def)             Requested size: 207.0021pt x 220.66603pt.
 
-<multi_im149.png, id=41, 273.9033pt x 291.9708pt>
-File: multi_im149.png Graphic file (type png)
- <use multi_im149.png>
-Package pdftex.def Info: multi_im149.png used on input line 208.
+<figures/multi_im149.png, id=41, 273.9033pt x 291.9708pt>
+File: figures/multi_im149.png Graphic file (type png)
+
+<use figures/multi_im149.png>
+Package pdftex.def Info: figures/multi_im149.png used on input line 208.
 (pdftex.def)             Requested size: 207.0021pt x 220.66603pt.
 
 Overfull \hbox (71.22643pt too wide) in paragraph at lines 207--209
@@ -855,15 +859,16 @@ Overfull \hbox (69.00421pt too wide) in paragraph at lines 207--209
 [][] 
  []
 
-[6 <./fire_bucket_ex.png>] [7 <./multi_im000.png> <./multi_im049.png> <./multi_
-im099.png> <./multi_im149.png>] [8] (./main.aux)
+[6 <./figures/fire_bucket_ex.png>] [7 <./figures/multi_im000.png> <./figures/mu
+lti_im049.png> <./figures/multi_im099.png> <./figures/multi_im149.png>]
+[8] (./main.aux)
 
 LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 12382 strings out of 493014
- 249174 string characters out of 6133351
+ 12383 strings out of 493014
+ 249342 string characters out of 6133351
  286626 words of memory out of 5000000
  15668 multiletter control sequences out of 15000+600000
  8502 words of font info for 30 fonts, out of 8000000 for 9000
